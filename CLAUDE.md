@@ -35,4 +35,5 @@
 
 ## Estado del proyecto
 - Sprint actual: Sprint 0 (setup fundacional)
-- Historias completadas: ninguna aún
+- Historias completadas: 0.1 (Docker Compose con Postgres, backend y frontend) — incluye de facto 0.4 (endpoint /health)
+- Historias pendientes del sprint: 0.3 (Alembic), 0.5 (CI con GitHub Actions)
