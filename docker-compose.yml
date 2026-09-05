@@ -1,0 +1,4 @@
+# Placeholder - se completará con los servicios api, db y front en la siguiente tarea
+version: "3.9"
+
+services: {}
