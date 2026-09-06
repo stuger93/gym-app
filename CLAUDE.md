@@ -34,6 +34,6 @@
 - Mantener dependencias actualizadas (revisar vulnerabilidades conocidas antes de cada release)
 
 ## Estado del proyecto
-- Sprint actual: Sprint 0 (setup fundacional)
-- Historias completadas: 0.1 (Docker Compose con Postgres, backend y frontend) — incluye de facto 0.4 (endpoint /health)
-- Historias pendientes del sprint: 0.3 (Alembic), 0.5 (CI con GitHub Actions)
+- Sprint 0 (setup fundacional): completado
+- Historias completadas: 0.1 (Docker Compose con Postgres, backend y frontend) — incluye de facto 0.4 (endpoint /health), 0.3 (Alembic configurado con migración inicial), 0.5 (CI con GitHub Actions)
+- Sprint actual: por definir (Sprint 1)
