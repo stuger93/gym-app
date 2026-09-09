@@ -36,4 +36,6 @@
 ## Estado del proyecto
 - Sprint 0 (setup fundacional): completado
 - Historias completadas: 0.1 (Docker Compose con Postgres, backend y frontend) — incluye de facto 0.4 (endpoint /health), 0.3 (Alembic configurado con migración inicial), 0.5 (CI con GitHub Actions)
-- Sprint actual: por definir (Sprint 1)
+- Sprint actual: Sprint 1
+  - Rebanada 1 (Login y autenticación): completada — usuarios, JWT, cookie httpOnly, rate limiting; ver docs/adr/ y SECURITY.md
+  - Rebanada 2 (Roles y protección de endpoints): completada — dependency require_rol reusable sobre get_current_user, endpoint de prueba GET /admin/ping

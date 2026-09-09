@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from app.auth import create_access_token, get_current_user, verify_password
+from app.auth import create_access_token, get_current_user, require_rol, verify_password
 from app.database import get_db
 from app.models import Usuario
 from app.schemas import LoginRequest, UsuarioOut
@@ -69,4 +69,9 @@ def me(usuario: Usuario = Depends(get_current_user)):
 @app.post("/logout")
 def logout(response: Response):
     response.delete_cookie("access_token")
+    return {"status": "ok"}
+
+
+@app.get("/admin/ping")
+def admin_ping(usuario: Usuario = Depends(require_rol("admin"))):
     return {"status": "ok"}
