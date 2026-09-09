@@ -54,7 +54,11 @@ export default function LoginPage() {
         </div>
 
         {loginMutation.isError && (
-          <p style={{ color: 'red' }}>Credenciales inválidas</p>
+          <p style={{ color: 'red' }}>
+            {loginMutation.error?.response?.status === 429
+              ? 'Demasiados intentos, esperá un minuto'
+              : 'Credenciales inválidas'}
+          </p>
         )}
 
         <button type="submit" disabled={loginMutation.isPending}>
