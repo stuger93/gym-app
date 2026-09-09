@@ -5,13 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, get_current_user, require_rol, verify_password
 from app.database import get_db
 from app.models import Socio, Usuario
-from app.schemas import LoginRequest, SocioCreate, SocioOut, UsuarioOut
+from app.schemas import LoginRequest, SocioCreate, SocioListOut, SocioOut, UsuarioOut
 
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
 
@@ -99,3 +100,30 @@ def crear_socio(
 
     db.refresh(socio)
     return socio
+
+
+@app.get("/socios", response_model=SocioListOut)
+def listar_socios(
+    search: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    query = db.query(Socio)
+    if search:
+        patron = f"%{search}%"
+        query = query.filter(
+            or_(
+                Socio.nombre.ilike(patron),
+                Socio.email.ilike(patron),
+                Socio.documento.ilike(patron),
+            )
+        )
+
+    total = query.count()
+    page = max(page, 1)
+    page_size = min(max(page_size, 1), 100)
+    items = query.order_by(Socio.id).offset((page - 1) * page_size).limit(page_size).all()
+
+    return {"items": items, "total": total, "page": page, "page_size": page_size}

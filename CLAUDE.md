@@ -40,3 +40,4 @@
   - Rebanada 1 (Login y autenticación): completada — usuarios, JWT, cookie httpOnly, rate limiting; ver docs/adr/ y SECURITY.md
   - Rebanada 2 (Roles y protección de endpoints): completada — dependency require_rol reusable sobre get_current_user, endpoint de prueba GET /admin/ping
   - Rebanada 3 (Registrar un socio): completada — Socio gana documento (único) y telefono; POST /socios protegido con require_rol("admin"), valida duplicados de email/documento (409); formulario "Nuevo socio" en el frontend
+  - Rebanada 4 (Listar y buscar socios): completada — GET /socios con búsqueda (ILIKE sobre nombre/email/documento) y paginación, protegido con require_rol("admin"); pantalla de lista con buscador debounced y estados vacíos claros

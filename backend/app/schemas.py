@@ -31,3 +31,10 @@ class SocioOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SocioListOut(BaseModel):
+    items: list[SocioOut]
+    total: int
+    page: int
+    page_size: int

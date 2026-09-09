@@ -23,6 +23,8 @@ export default function HomePage() {
           </p>
           {currentUser.rol === 'admin' && (
             <p>
+              <Link to="/socios">Ver socios</Link>
+              {' | '}
               <Link to="/socios/nuevo">Nuevo socio</Link>
             </p>
           )}
