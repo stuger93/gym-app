@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String, true
 
 from app.database import Base
 
@@ -11,6 +11,7 @@ class Socio(Base):
     email = Column(String, unique=True, nullable=False)
     documento = Column(String, unique=True, nullable=False)
     telefono = Column(String, nullable=True)
+    activo = Column(Boolean, nullable=False, default=True, server_default=true())
 
 
 class Usuario(Base):

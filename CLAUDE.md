@@ -36,8 +36,10 @@
 ## Estado del proyecto
 - Sprint 0 (setup fundacional): completado
 - Historias completadas: 0.1 (Docker Compose con Postgres, backend y frontend) — incluye de facto 0.4 (endpoint /health), 0.3 (Alembic configurado con migración inicial), 0.5 (CI con GitHub Actions)
-- Sprint actual: Sprint 1
+- Sprint 1: completado (las 5 rebanadas)
   - Rebanada 1 (Login y autenticación): completada — usuarios, JWT, cookie httpOnly, rate limiting; ver docs/adr/ y SECURITY.md
   - Rebanada 2 (Roles y protección de endpoints): completada — dependency require_rol reusable sobre get_current_user, endpoint de prueba GET /admin/ping
   - Rebanada 3 (Registrar un socio): completada — Socio gana documento (único) y telefono; POST /socios protegido con require_rol("admin"), valida duplicados de email/documento (409); formulario "Nuevo socio" en el frontend
   - Rebanada 4 (Listar y buscar socios): completada — GET /socios con búsqueda (ILIKE sobre nombre/email/documento) y paginación, protegido con require_rol("admin"); pantalla de lista con buscador debounced y estados vacíos claros
+  - Rebanada 5 (Editar y dar de baja un socio): completada — Socio gana activo (baja lógica); GET/PUT/DELETE /socios/{id} protegidos con require_rol("admin"), PUT valida unicidad excluyendo al propio socio; edición y baja (con confirmación) en el frontend, toggle "Mostrar inactivos" en el listado
+- Sprint actual: por definir (Sprint 2)

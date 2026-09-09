@@ -22,12 +22,20 @@ class SocioCreate(BaseModel):
     telefono: str | None = None
 
 
+class SocioUpdate(BaseModel):
+    nombre: str
+    email: EmailStr
+    documento: str
+    telefono: str | None = None
+
+
 class SocioOut(BaseModel):
     id: int
     nombre: str
     email: EmailStr
     documento: str
     telefono: str | None
+    activo: bool
 
     class Config:
         from_attributes = True

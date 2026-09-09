@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { client } from '../../api/client'
 import RequireAuth from '../auth/RequireAuth'
 import { useSocios } from './useSocios'
 
@@ -7,6 +9,8 @@ function SociosList() {
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [incluirInactivos, setIncluirInactivos] = useState(false)
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -16,14 +20,27 @@ function SociosList() {
     return () => clearTimeout(timeout)
   }, [searchInput])
 
-  const { data, isLoading, isError } = useSocios({ search, page })
+  const { data, isLoading, isError } = useSocios({ search, page, incluirInactivos })
+
+  const bajaMutation = useMutation({
+    mutationFn: (id) => client.delete(`/socios/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['socios'] })
+    },
+  })
+
+  const handleDarDeBaja = (socio) => {
+    if (window.confirm(`¿Dar de baja a ${socio.nombre}?`)) {
+      bajaMutation.mutate(socio.id)
+    }
+  }
 
   const total = data?.total ?? 0
   const pageSize = data?.page_size ?? 20
   const totalPages = Math.max(Math.ceil(total / pageSize), 1)
 
   return (
-    <div style={{ maxWidth: 640, margin: '4rem auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: 720, margin: '4rem auto', fontFamily: 'sans-serif' }}>
       <h1>Socios</h1>
 
       <input
@@ -31,8 +48,20 @@ function SociosList() {
         placeholder="Buscar por nombre, email o documento..."
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
-        style={{ display: 'block', width: '100%', marginBottom: '1rem' }}
+        style={{ display: 'block', width: '100%', marginBottom: '0.5rem' }}
       />
+
+      <label style={{ display: 'block', marginBottom: '1rem' }}>
+        <input
+          type="checkbox"
+          checked={incluirInactivos}
+          onChange={(e) => {
+            setIncluirInactivos(e.target.checked)
+            setPage(1)
+          }}
+        />
+        {' '}Mostrar inactivos
+      </label>
 
       {isLoading && <p>Cargando...</p>}
 
@@ -57,6 +86,8 @@ function SociosList() {
                 <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Email</th>
                 <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Documento</th>
                 <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Teléfono</th>
+                <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Estado</th>
+                <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -66,6 +97,18 @@ function SociosList() {
                   <td>{socio.email}</td>
                   <td>{socio.documento}</td>
                   <td>{socio.telefono || '-'}</td>
+                  <td>{socio.activo ? 'Activo' : 'Inactivo'}</td>
+                  <td>
+                    <Link to={`/socios/${socio.id}/editar`}>Editar</Link>
+                    {socio.activo && (
+                      <>
+                        {' | '}
+                        <button type="button" onClick={() => handleDarDeBaja(socio)}>
+                          Dar de baja
+                        </button>
+                      </>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

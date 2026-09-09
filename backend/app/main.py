@@ -12,7 +12,14 @@ from sqlalchemy.orm import Session
 from app.auth import create_access_token, get_current_user, require_rol, verify_password
 from app.database import get_db
 from app.models import Socio, Usuario
-from app.schemas import LoginRequest, SocioCreate, SocioListOut, SocioOut, UsuarioOut
+from app.schemas import (
+    LoginRequest,
+    SocioCreate,
+    SocioListOut,
+    SocioOut,
+    SocioUpdate,
+    UsuarioOut,
+)
 
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
 
@@ -107,10 +114,13 @@ def listar_socios(
     search: str | None = None,
     page: int = 1,
     page_size: int = 20,
+    incluir_inactivos: bool = False,
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(require_rol("admin")),
 ):
     query = db.query(Socio)
+    if not incluir_inactivos:
+        query = query.filter(Socio.activo == True)  # noqa: E712
     if search:
         patron = f"%{search}%"
         query = query.filter(
@@ -127,3 +137,59 @@ def listar_socios(
     items = query.order_by(Socio.id).offset((page - 1) * page_size).limit(page_size).all()
 
     return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+
+@app.get("/socios/{id}", response_model=SocioOut)
+def obtener_socio(
+    id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    socio = db.get(Socio, id)
+    if socio is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
+    return socio
+
+
+@app.put("/socios/{id}", response_model=SocioOut)
+def actualizar_socio(
+    id: int,
+    datos: SocioUpdate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    socio = db.get(Socio, id)
+    if socio is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
+
+    if db.query(Socio).filter(Socio.email == datos.email, Socio.id != id).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un socio con ese email")
+    if db.query(Socio).filter(Socio.documento == datos.documento, Socio.id != id).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un socio con ese documento")
+
+    socio.nombre = datos.nombre
+    socio.email = datos.email
+    socio.documento = datos.documento
+    socio.telefono = datos.telefono
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un socio con esos datos")
+
+    db.refresh(socio)
+    return socio
+
+
+@app.delete("/socios/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def dar_de_baja_socio(
+    id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    socio = db.get(Socio, id)
+    if socio is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
+
+    socio.activo = False
+    db.commit()
