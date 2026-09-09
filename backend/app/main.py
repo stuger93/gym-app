@@ -5,12 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, get_current_user, require_rol, verify_password
 from app.database import get_db
-from app.models import Usuario
-from app.schemas import LoginRequest, UsuarioOut
+from app.models import Socio, Usuario
+from app.schemas import LoginRequest, SocioCreate, SocioOut, UsuarioOut
 
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
 
@@ -75,3 +76,26 @@ def logout(response: Response):
 @app.get("/admin/ping")
 def admin_ping(usuario: Usuario = Depends(require_rol("admin"))):
     return {"status": "ok"}
+
+
+@app.post("/socios", response_model=SocioOut, status_code=status.HTTP_201_CREATED)
+def crear_socio(
+    datos: SocioCreate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    if db.query(Socio).filter(Socio.email == datos.email).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un socio con ese email")
+    if db.query(Socio).filter(Socio.documento == datos.documento).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un socio con ese documento")
+
+    socio = Socio(**datos.model_dump())
+    db.add(socio)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un socio con esos datos")
+
+    db.refresh(socio)
+    return socio

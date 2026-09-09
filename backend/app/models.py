@@ -9,6 +9,8 @@ class Socio(Base):
     id = Column(Integer, primary_key=True)
     nombre = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
+    documento = Column(String, unique=True, nullable=False)
+    telefono = Column(String, nullable=True)
 
 
 class Usuario(Base):

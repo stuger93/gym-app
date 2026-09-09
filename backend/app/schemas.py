@@ -13,3 +13,21 @@ class UsuarioOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SocioCreate(BaseModel):
+    nombre: str
+    email: EmailStr
+    documento: str
+    telefono: str | None = None
+
+
+class SocioOut(BaseModel):
+    id: int
+    nombre: str
+    email: EmailStr
+    documento: str
+    telefono: str | None
+
+    class Config:
+        from_attributes = True
