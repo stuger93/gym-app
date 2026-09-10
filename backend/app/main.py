@@ -1,4 +1,5 @@
 import os
+from datetime import date, timedelta
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,9 +12,11 @@ from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, get_current_user, require_rol, verify_password
 from app.database import get_db
-from app.models import Plan, Socio, Usuario
+from app.models import Membresia, Plan, Socio, Usuario
 from app.schemas import (
     LoginRequest,
+    MembresiaCreate,
+    MembresiaOut,
     PlanCreate,
     PlanOut,
     PlanUpdate,
@@ -283,3 +286,60 @@ def desactivar_plan(
 
     plan.activo = False
     db.commit()
+
+
+@app.post(
+    "/socios/{id}/membresias",
+    response_model=MembresiaOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def asignar_membresia(
+    id: int,
+    datos: MembresiaCreate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    socio = db.get(Socio, id)
+    if socio is None or not socio.activo:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
+
+    plan = db.get(Plan, datos.plan_id)
+    if plan is None or not plan.activo:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Plan no encontrado o inactivo")
+
+    db.query(Membresia).filter(
+        Membresia.socio_id == id, Membresia.activa == True  # noqa: E712
+    ).update({"activa": False})
+
+    fecha_inicio = datos.fecha_inicio or date.today()
+    fecha_vencimiento = fecha_inicio + timedelta(days=plan.duracion_dias)
+
+    membresia = Membresia(
+        socio_id=id,
+        plan_id=plan.id,
+        fecha_inicio=fecha_inicio,
+        fecha_vencimiento=fecha_vencimiento,
+        activa=True,
+    )
+    db.add(membresia)
+    db.commit()
+    db.refresh(membresia)
+    return membresia
+
+
+@app.get("/socios/{id}/membresias", response_model=list[MembresiaOut])
+def listar_membresias(
+    id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    socio = db.get(Socio, id)
+    if socio is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
+
+    return (
+        db.query(Membresia)
+        .filter(Membresia.socio_id == id)
+        .order_by(Membresia.fecha_inicio.desc())
+        .all()
+    )

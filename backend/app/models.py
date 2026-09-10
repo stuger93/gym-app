@@ -1,4 +1,5 @@
-from sqlalchemy import Boolean, Column, Integer, Numeric, String, true
+from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, Numeric, String, true
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -23,6 +24,19 @@ class Plan(Base):
     precio = Column(Numeric(10, 2), nullable=False)
     duracion_dias = Column(Integer, nullable=False)
     activo = Column(Boolean, nullable=False, default=True, server_default=true())
+
+
+class Membresia(Base):
+    __tablename__ = "membresias"
+
+    id = Column(Integer, primary_key=True)
+    socio_id = Column(Integer, ForeignKey("socios.id"), nullable=False)
+    plan_id = Column(Integer, ForeignKey("planes.id"), nullable=False)
+    fecha_inicio = Column(Date, nullable=False)
+    fecha_vencimiento = Column(Date, nullable=False)
+    activa = Column(Boolean, nullable=False, default=True, server_default=true())
+
+    plan = relationship("Plan")
 
 
 class Usuario(Base):

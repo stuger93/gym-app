@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr
@@ -71,6 +72,24 @@ class PlanOut(BaseModel):
     precio: Decimal
     duracion_dias: int
     activo: bool
+
+    class Config:
+        from_attributes = True
+
+
+class MembresiaCreate(BaseModel):
+    plan_id: int
+    fecha_inicio: date | None = None
+
+
+class MembresiaOut(BaseModel):
+    id: int
+    socio_id: int
+    plan_id: int
+    fecha_inicio: date
+    fecha_vencimiento: date
+    activa: bool
+    plan: PlanOut
 
     class Config:
         from_attributes = True
