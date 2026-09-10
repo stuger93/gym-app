@@ -1,4 +1,7 @@
+from datetime import date
+
 from sqlalchemy import Boolean, Column, Date, ForeignKey, Integer, Numeric, String, true
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -37,6 +40,10 @@ class Membresia(Base):
     activa = Column(Boolean, nullable=False, default=True, server_default=true())
 
     plan = relationship("Plan")
+
+    @hybrid_property
+    def vencida(self):
+        return self.fecha_vencimiento < date.today()
 
 
 class Usuario(Base):

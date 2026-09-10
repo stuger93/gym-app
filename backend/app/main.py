@@ -24,6 +24,7 @@ from app.schemas import (
     SocioListOut,
     SocioOut,
     SocioUpdate,
+    SocioVencidoOut,
     UsuarioOut,
 )
 
@@ -143,6 +144,32 @@ def listar_socios(
     items = query.order_by(Socio.id).offset((page - 1) * page_size).limit(page_size).all()
 
     return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+
+@app.get("/socios/vencidos", response_model=list[SocioVencidoOut])
+def listar_socios_vencidos(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    resultados = (
+        db.query(Socio, Membresia)
+        .join(Membresia, Membresia.socio_id == Socio.id)
+        .filter(Socio.activo == True, Membresia.activa == True, Membresia.vencida)  # noqa: E712
+        .order_by(Membresia.fecha_vencimiento.asc())
+        .all()
+    )
+    return [
+        {
+            "id": socio.id,
+            "nombre": socio.nombre,
+            "email": socio.email,
+            "telefono": socio.telefono,
+            "documento": socio.documento,
+            "plan_nombre": membresia.plan.nombre,
+            "fecha_vencimiento": membresia.fecha_vencimiento,
+        }
+        for socio, membresia in resultados
+    ]
 
 
 @app.get("/socios/{id}", response_model=SocioOut)

@@ -89,7 +89,18 @@ class MembresiaOut(BaseModel):
     fecha_inicio: date
     fecha_vencimiento: date
     activa: bool
+    vencida: bool
     plan: PlanOut
 
     class Config:
         from_attributes = True
+
+
+class SocioVencidoOut(BaseModel):
+    id: int
+    nombre: str
+    email: EmailStr
+    telefono: str | None
+    documento: str
+    plan_nombre: str
+    fecha_vencimiento: date
