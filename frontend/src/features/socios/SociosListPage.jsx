@@ -29,9 +29,22 @@ function SociosList() {
     },
   })
 
+  const reactivarMutation = useMutation({
+    mutationFn: (id) => client.patch(`/socios/${id}/reactivar`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['socios'] })
+    },
+  })
+
   const handleDarDeBaja = (socio) => {
     if (window.confirm(`¿Dar de baja a ${socio.nombre}?`)) {
       bajaMutation.mutate(socio.id)
+    }
+  }
+
+  const handleReactivar = (socio) => {
+    if (window.confirm(`¿Reactivar a ${socio.nombre}?`)) {
+      reactivarMutation.mutate(socio.id)
     }
   }
 
@@ -100,11 +113,18 @@ function SociosList() {
                   <td>{socio.activo ? 'Activo' : 'Inactivo'}</td>
                   <td>
                     <Link to={`/socios/${socio.id}/editar`}>Editar</Link>
-                    {socio.activo && (
+                    {socio.activo ? (
                       <>
                         {' | '}
                         <button type="button" onClick={() => handleDarDeBaja(socio)}>
                           Dar de baja
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {' | '}
+                        <button type="button" onClick={() => handleReactivar(socio)}>
+                          Reactivar
                         </button>
                       </>
                     )}

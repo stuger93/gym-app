@@ -228,6 +228,22 @@ def dar_de_baja_socio(
     db.commit()
 
 
+@app.patch("/socios/{id}/reactivar", response_model=SocioOut)
+def reactivar_socio(
+    id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    socio = db.get(Socio, id)
+    if socio is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
+
+    socio.activo = True
+    db.commit()
+    db.refresh(socio)
+    return socio
+
+
 @app.post("/planes", response_model=PlanOut, status_code=status.HTTP_201_CREATED)
 def crear_plan(
     datos: PlanCreate,
