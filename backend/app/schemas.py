@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -46,3 +48,29 @@ class SocioListOut(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class PlanCreate(BaseModel):
+    nombre: str
+    descripcion: str | None = None
+    precio: Decimal
+    duracion_dias: int
+
+
+class PlanUpdate(BaseModel):
+    nombre: str
+    descripcion: str | None = None
+    precio: Decimal
+    duracion_dias: int
+
+
+class PlanOut(BaseModel):
+    id: int
+    nombre: str
+    descripcion: str | None
+    precio: Decimal
+    duracion_dias: int
+    activo: bool
+
+    class Config:
+        from_attributes = True

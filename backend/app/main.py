@@ -11,9 +11,12 @@ from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, get_current_user, require_rol, verify_password
 from app.database import get_db
-from app.models import Socio, Usuario
+from app.models import Plan, Socio, Usuario
 from app.schemas import (
     LoginRequest,
+    PlanCreate,
+    PlanOut,
+    PlanUpdate,
     SocioCreate,
     SocioListOut,
     SocioOut,
@@ -192,4 +195,91 @@ def dar_de_baja_socio(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
 
     socio.activo = False
+    db.commit()
+
+
+@app.post("/planes", response_model=PlanOut, status_code=status.HTTP_201_CREATED)
+def crear_plan(
+    datos: PlanCreate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    if db.query(Plan).filter(Plan.nombre == datos.nombre).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un plan con ese nombre")
+
+    plan = Plan(**datos.model_dump())
+    db.add(plan)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un plan con ese nombre")
+
+    db.refresh(plan)
+    return plan
+
+
+@app.get("/planes", response_model=list[PlanOut])
+def listar_planes(
+    incluir_inactivos: bool = False,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    query = db.query(Plan)
+    if not incluir_inactivos:
+        query = query.filter(Plan.activo == True)  # noqa: E712
+    return query.order_by(Plan.id).all()
+
+
+@app.get("/planes/{id}", response_model=PlanOut)
+def obtener_plan(
+    id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    plan = db.get(Plan, id)
+    if plan is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Plan no encontrado")
+    return plan
+
+
+@app.put("/planes/{id}", response_model=PlanOut)
+def actualizar_plan(
+    id: int,
+    datos: PlanUpdate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    plan = db.get(Plan, id)
+    if plan is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Plan no encontrado")
+
+    if db.query(Plan).filter(Plan.nombre == datos.nombre, Plan.id != id).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un plan con ese nombre")
+
+    plan.nombre = datos.nombre
+    plan.descripcion = datos.descripcion
+    plan.precio = datos.precio
+    plan.duracion_dias = datos.duracion_dias
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un plan con ese nombre")
+
+    db.refresh(plan)
+    return plan
+
+
+@app.delete("/planes/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def desactivar_plan(
+    id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    plan = db.get(Plan, id)
+    if plan is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Plan no encontrado")
+
+    plan.activo = False
     db.commit()

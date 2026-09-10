@@ -26,6 +26,8 @@ export default function HomePage() {
               <Link to="/socios">Ver socios</Link>
               {' | '}
               <Link to="/socios/nuevo">Nuevo socio</Link>
+              {' | '}
+              <Link to="/planes">Planes</Link>
             </p>
           )}
           <button type="button" onClick={handleLogout}>

@@ -42,4 +42,5 @@
   - Rebanada 3 (Registrar un socio): completada — Socio gana documento (único) y telefono; POST /socios protegido con require_rol("admin"), valida duplicados de email/documento (409); formulario "Nuevo socio" en el frontend
   - Rebanada 4 (Listar y buscar socios): completada — GET /socios con búsqueda (ILIKE sobre nombre/email/documento) y paginación, protegido con require_rol("admin"); pantalla de lista con buscador debounced y estados vacíos claros
   - Rebanada 5 (Editar y dar de baja un socio): completada — Socio gana activo (baja lógica); GET/PUT/DELETE /socios/{id} protegidos con require_rol("admin"), PUT valida unicidad excluyendo al propio socio; edición y baja (con confirmación) en el frontend, toggle "Mostrar inactivos" en el listado
-- Sprint actual: por definir (Sprint 2)
+- Sprint actual: Sprint 2
+  - Rebanada 1 (Definir planes de membresía): completada — modelo Plan (nombre único, descripción, precio Numeric, duracion_dias, activo); POST/GET/PUT/DELETE /planes protegidos con require_rol("admin"), DELETE es baja lógica igual que Socio; pantalla de administración de planes en el frontend (crear/editar/desactivar), sin relación con Socio todavía (llega en la Rebanada 2)
