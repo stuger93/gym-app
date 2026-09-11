@@ -27,6 +27,10 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      # Valores dummy: solo hacen falta para que app.auth/app.main puedan importarse
+      # en CI (requieren estas variables sin default). No son secretos reales.
+      JWT_SECRET_KEY: ci-test-secret-key
+      FRONTEND_ORIGIN: http://localhost:5173
 
     steps:
       - uses: actions/checkout@v4
