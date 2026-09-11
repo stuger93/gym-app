@@ -89,18 +89,25 @@ Se recomienda revisar estos documentos para entender el porqué de las decisione
 
 ## Cómo correr los tests y el linter
 
+Con el stack levantado (`docker compose up`), desde otra terminal:
+
 **Backend:**
 ```bash
 docker compose exec backend pytest
 docker compose exec backend ruff check .
 ```
 
+Los tests del backend usan una base de datos separada (`<nombre_db>_test`, en el mismo Postgres del `docker-compose`) que se crea sola la primera vez que se corren; cada test corre en una transacción que se revierte al final, así nunca tocan ni ensucian la base de datos de desarrollo real.
+
 **Frontend:**
 ```bash
+docker compose exec frontend npm run test
 docker compose exec frontend npm run lint
 docker compose exec frontend npm run build
 ```
 
-El proyecto todavía no cuenta con una suite de tests automatizados (ni `pytest` en el backend ni tests de componentes en el frontend); los comandos de arriba reflejan la convención definida para cuando se agreguen. Lo que sí corre hoy en cada `push` o pull request a `main` es el **pipeline de CI en GitHub Actions**, que valida automáticamente:
-- Backend: lint con `ruff` y que las migraciones de Alembic apliquen limpio contra una base de datos nueva.
-- Frontend: lint con `oxlint` y que el build de producción (`vite build`) compile sin errores.
+También se pueden correr fuera de Docker si tenés Node/Python instalados localmente: `pytest` y `ruff check .` desde `backend/` (con las dependencias de `requirements.txt` instaladas y `DATABASE_URL` apuntando a una base accesible), o `npm test`/`npm run lint`/`npm run build` desde `frontend/` (con `npm install` corrido antes).
+
+El **pipeline de CI en GitHub Actions** corre automáticamente en cada `push` o pull request a `main`, validando:
+- Backend: lint con `ruff`, que las migraciones de Alembic apliquen limpio contra una base de datos nueva, y la suite de `pytest`.
+- Frontend: lint con `oxlint`, la suite de tests con `vitest`, y que el build de producción (`vite build`) compile sin errores.

@@ -47,6 +47,10 @@ jobs:
         working-directory: backend
         run: alembic upgrade head
 
+      - name: Tests (pytest)
+        working-directory: backend
+        run: pytest
+
   frontend:
     runs-on: ubuntu-latest
 
@@ -66,6 +70,10 @@ jobs:
       - name: Lint (oxlint)
         working-directory: frontend
         run: npm run lint
+
+      - name: Tests (vitest)
+        working-directory: frontend
+        run: npm run test
 
       - name: Build de producción
         working-directory: frontend

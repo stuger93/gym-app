@@ -14,8 +14,8 @@
 ## Comandos
 - Levantar todo: docker-compose up
 - Migraciones: alembic upgrade head
-- Tests backend: pytest
-- Tests frontend: npm test
+- Tests backend: docker compose exec backend pytest (usa una base de datos de test separada, aislada por transacción con rollback por test — nunca toca la base de desarrollo)
+- Tests frontend: docker compose exec frontend npm run test (Vitest)
 
 ## Convenciones
 - Commits descriptivos, uno por fase completada
@@ -48,3 +48,4 @@
   - Rebanada 3 (Detectar membresías vencidas): completada — Membresia.vencida como hybrid_property (calculado al vuelo, sin campo persistido ni job de sincronización), usable tanto en Python como en filtros SQL; GET /socios/vencidos lista socios cuya membresía vigente (activa=true) ya venció, protegido con require_rol("admin"); pantalla "Vencimientos" en el frontend con link de renovación a la ficha del socio
   - Rebanada 4 (Vista de membresía para el socio): completada — Usuario gana socio_id (FK opcional, nullable, no rompe al admin); GET /me/membresia protegido solo con get_current_user (cualquier rol), responde siempre 200 coherente (con/sin socio vinculado, con/sin membresía activa); HomePage ramifica por rol (admin ve gestión, socio ve su propio estado de membresía); usuario de prueba rol "socio" creado manualmente (no commiteado), igual patrón que "staff" en Sprint 1
 - Sprint actual: por definir (Sprint 3)
+- Tests automatizados: suite de pytest en backend/tests/ (login, require_rol, unicidad de socios/planes, cálculo de fecha_vencimiento, hybrid_property vencida, GET /socios/vencidos) con base de datos de test aislada (transacción + rollback por test); Vitest en el frontend para LoginPage (validación de campos, manejo de 401 vs 429). Ambas suites corren en el CI en cada push/PR a main.
