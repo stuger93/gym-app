@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { client } from '../../api/client'
 import RequireAuth from './RequireAuth'
+import MiMembresiaView from '../membresia/MiMembresiaView'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -31,6 +32,10 @@ export default function HomePage() {
               {' | '}
               <Link to="/socios/vencidos">Vencimientos</Link>
             </p>
+          )}
+          {currentUser.rol === 'socio' && <MiMembresiaView />}
+          {currentUser.rol !== 'admin' && currentUser.rol !== 'socio' && (
+            <p>Rol no reconocido.</p>
           )}
           <button type="button" onClick={handleLogout}>
             Cerrar sesión

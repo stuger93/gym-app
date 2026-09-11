@@ -17,6 +17,7 @@ from app.schemas import (
     LoginRequest,
     MembresiaCreate,
     MembresiaOut,
+    MiMembresiaOut,
     PlanCreate,
     PlanOut,
     PlanUpdate,
@@ -86,6 +87,32 @@ def me(usuario: Usuario = Depends(get_current_user)):
 def logout(response: Response):
     response.delete_cookie("access_token")
     return {"status": "ok"}
+
+
+@app.get("/me/membresia", response_model=MiMembresiaOut)
+def mi_membresia(
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if usuario.socio_id is None:
+        return MiMembresiaOut(tiene_socio_vinculado=False, tiene_membresia_activa=False)
+
+    membresia = (
+        db.query(Membresia)
+        .filter(Membresia.socio_id == usuario.socio_id, Membresia.activa == True)  # noqa: E712
+        .first()
+    )
+    if membresia is None:
+        return MiMembresiaOut(tiene_socio_vinculado=True, tiene_membresia_activa=False)
+
+    return MiMembresiaOut(
+        tiene_socio_vinculado=True,
+        tiene_membresia_activa=True,
+        plan_nombre=membresia.plan.nombre,
+        fecha_inicio=membresia.fecha_inicio,
+        fecha_vencimiento=membresia.fecha_vencimiento,
+        vencida=membresia.vencida,
+    )
 
 
 @app.get("/admin/ping")

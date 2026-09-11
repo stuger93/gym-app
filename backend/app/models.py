@@ -53,3 +53,4 @@ class Usuario(Base):
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
     rol = Column(String, nullable=False, default="admin")
+    socio_id = Column(Integer, ForeignKey("socios.id"), nullable=True)

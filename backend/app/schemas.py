@@ -104,3 +104,12 @@ class SocioVencidoOut(BaseModel):
     documento: str
     plan_nombre: str
     fecha_vencimiento: date
+
+
+class MiMembresiaOut(BaseModel):
+    tiene_socio_vinculado: bool
+    tiene_membresia_activa: bool
+    plan_nombre: str | None = None
+    fecha_inicio: date | None = None
+    fecha_vencimiento: date | None = None
+    vencida: bool | None = None
