@@ -77,6 +77,104 @@ def test_registrar_pago_a_socio_inexistente(client, crear_usuario, login):
     assert res.status_code == 404
 
 
+def test_pago_con_renovar_con_plan_id_crea_membresia_y_desactiva_anterior(
+    client, crear_usuario, login
+):
+    _login_admin(client, crear_usuario, login)
+    socio = _crear_socio(client)
+    plan_viejo = _crear_plan(client, nombre="Mensual")
+    plan_nuevo = _crear_plan(client, nombre="Anual")
+    membresia_vieja = client.post(
+        f"/socios/{socio['id']}/membresias", json={"plan_id": plan_viejo["id"]}
+    ).json()
+
+    res = client.post(
+        f"/socios/{socio['id']}/pagos",
+        json={"monto": 45000, "metodo": "efectivo", "renovar_con_plan_id": plan_nuevo["id"]},
+    )
+
+    assert res.status_code == 201
+    pago = res.json()
+    assert pago["membresia_id"] is not None
+    assert pago["membresia_id"] != membresia_vieja["id"]
+
+    historial = client.get(f"/socios/{socio['id']}/membresias").json()
+    vieja_actualizada = next(m for m in historial if m["id"] == membresia_vieja["id"])
+    nueva = next(m for m in historial if m["id"] == pago["membresia_id"])
+    assert vieja_actualizada["activa"] is False
+    assert nueva["activa"] is True
+    assert nueva["plan_id"] == plan_nuevo["id"]
+
+
+def test_pago_con_renovar_con_plan_id_sin_membresia_previa(client, crear_usuario, login):
+    _login_admin(client, crear_usuario, login)
+    socio = _crear_socio(client)
+    plan = _crear_plan(client)
+
+    res = client.post(
+        f"/socios/{socio['id']}/pagos",
+        json={"monto": 5000, "metodo": "efectivo", "renovar_con_plan_id": plan["id"]},
+    )
+
+    assert res.status_code == 201
+    pago = res.json()
+    assert pago["membresia_id"] is not None
+
+    historial = client.get(f"/socios/{socio['id']}/membresias").json()
+    assert len(historial) == 1
+    assert historial[0]["id"] == pago["membresia_id"]
+    assert historial[0]["activa"] is True
+
+
+def test_pago_renovar_con_plan_inexistente_falla(client, crear_usuario, login):
+    _login_admin(client, crear_usuario, login)
+    socio = _crear_socio(client)
+
+    res = client.post(
+        f"/socios/{socio['id']}/pagos",
+        json={"monto": 5000, "metodo": "efectivo", "renovar_con_plan_id": 9999},
+    )
+
+    assert res.status_code == 404
+
+
+def test_pago_renovar_con_plan_inactivo_falla(client, crear_usuario, login):
+    _login_admin(client, crear_usuario, login)
+    socio = _crear_socio(client)
+    plan = _crear_plan(client)
+    client.delete(f"/planes/{plan['id']}")
+
+    res = client.post(
+        f"/socios/{socio['id']}/pagos",
+        json={"monto": 5000, "metodo": "efectivo", "renovar_con_plan_id": plan["id"]},
+    )
+
+    assert res.status_code == 404
+
+
+def test_pago_con_membresia_id_y_renovar_con_plan_id_juntos_falla(
+    client, crear_usuario, login
+):
+    _login_admin(client, crear_usuario, login)
+    socio = _crear_socio(client)
+    plan = _crear_plan(client)
+    membresia = client.post(
+        f"/socios/{socio['id']}/membresias", json={"plan_id": plan["id"]}
+    ).json()
+
+    res = client.post(
+        f"/socios/{socio['id']}/pagos",
+        json={
+            "monto": 5000,
+            "metodo": "efectivo",
+            "membresia_id": membresia["id"],
+            "renovar_con_plan_id": plan["id"],
+        },
+    )
+
+    assert res.status_code == 400
+
+
 def test_registrar_pago_rechazado_sin_rol_admin(client, crear_usuario, login):
     admin, admin_password = crear_usuario(
         email="admin2@test.com", password="Password123!", rol="admin"

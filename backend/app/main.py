@@ -360,6 +360,37 @@ def desactivar_plan(
     db.commit()
 
 
+def _crear_membresia(
+    db: Session,
+    socio_id: int,
+    plan: Plan,
+    fecha_inicio: date | None = None,
+) -> Membresia:
+    """Desactiva la membresía activa del socio (si hay) y crea una nueva.
+
+    No hace commit: usa flush() para que la membresía quede con id asignado
+    dentro de la transacción actual, permitiendo a quien la llama confirmarla
+    junto con otros cambios relacionados (ej. un pago) de forma atómica.
+    """
+    db.query(Membresia).filter(
+        Membresia.socio_id == socio_id, Membresia.activa == True  # noqa: E712
+    ).update({"activa": False})
+
+    fecha_inicio = fecha_inicio or date.today()
+    fecha_vencimiento = fecha_inicio + timedelta(days=plan.duracion_dias)
+
+    membresia = Membresia(
+        socio_id=socio_id,
+        plan_id=plan.id,
+        fecha_inicio=fecha_inicio,
+        fecha_vencimiento=fecha_vencimiento,
+        activa=True,
+    )
+    db.add(membresia)
+    db.flush()
+    return membresia
+
+
 @app.post(
     "/socios/{id}/membresias",
     response_model=MembresiaOut,
@@ -379,21 +410,7 @@ def asignar_membresia(
     if plan is None or not plan.activo:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Plan no encontrado o inactivo")
 
-    db.query(Membresia).filter(
-        Membresia.socio_id == id, Membresia.activa == True  # noqa: E712
-    ).update({"activa": False})
-
-    fecha_inicio = datos.fecha_inicio or date.today()
-    fecha_vencimiento = fecha_inicio + timedelta(days=plan.duracion_dias)
-
-    membresia = Membresia(
-        socio_id=id,
-        plan_id=plan.id,
-        fecha_inicio=fecha_inicio,
-        fecha_vencimiento=fecha_vencimiento,
-        activa=True,
-    )
-    db.add(membresia)
+    membresia = _crear_membresia(db, id, plan, datos.fecha_inicio)
     db.commit()
     db.refresh(membresia)
     return membresia
@@ -432,14 +449,28 @@ def registrar_pago(
     if socio is None or not socio.activo:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
 
-    if datos.membresia_id is not None:
+    if datos.membresia_id is not None and datos.renovar_con_plan_id is not None:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "No se puede indicar membresia_id y renovar_con_plan_id al mismo tiempo",
+        )
+
+    membresia_id = datos.membresia_id
+
+    if datos.renovar_con_plan_id is not None:
+        plan = db.get(Plan, datos.renovar_con_plan_id)
+        if plan is None or not plan.activo:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Plan no encontrado o inactivo")
+        nueva_membresia = _crear_membresia(db, id, plan)
+        membresia_id = nueva_membresia.id
+    elif datos.membresia_id is not None:
         membresia = db.get(Membresia, datos.membresia_id)
         if membresia is None or membresia.socio_id != id:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Membresía no encontrada")
 
     pago = Pago(
         socio_id=id,
-        membresia_id=datos.membresia_id,
+        membresia_id=membresia_id,
         monto=datos.monto,
         metodo=datos.metodo,
         fecha=datos.fecha or date.today(),

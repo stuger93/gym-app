@@ -111,6 +111,7 @@ class PagoCreate(BaseModel):
     metodo: str
     fecha: date | None = None
     membresia_id: int | None = None
+    renovar_con_plan_id: int | None = None
 
 
 class PagoOut(BaseModel):
