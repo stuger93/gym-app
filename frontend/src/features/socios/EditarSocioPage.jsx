@@ -4,7 +4,9 @@ import { client } from '../../api/client'
 import RequireAuth from '../auth/RequireAuth'
 import SocioForm from './SocioForm'
 import AsignarPlanForm from './AsignarPlanForm'
+import RegistrarPagoForm from './RegistrarPagoForm'
 import { useMembresias } from './useMembresias'
+import { usePagos } from './usePagos'
 
 function EditarSocioForm({ id }) {
   const navigate = useNavigate()
@@ -100,6 +102,54 @@ function MembresiaSection({ id }) {
   )
 }
 
+function PagosSection({ id }) {
+  const { data: pagos, isLoading, isError } = usePagos(id)
+
+  if (isLoading) {
+    return <p>Cargando pagos...</p>
+  }
+
+  if (isError) {
+    return <p style={{ color: 'red' }}>No se pudo cargar el historial de pagos</p>
+  }
+
+  return (
+    <div style={{ marginTop: '2rem', borderTop: '1px solid #ccc', paddingTop: '1rem' }}>
+      <h2>Pagos</h2>
+
+      {pagos.length === 0 ? (
+        <p>Todavía no hay pagos registrados.</p>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Fecha</th>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Monto</th>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>Método</th>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
+                ¿Renovó membresía?
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {pagos.map((pago) => (
+              <tr key={pago.id}>
+                <td>{pago.fecha}</td>
+                <td>${pago.monto}</td>
+                <td>{pago.metodo}</td>
+                <td>{pago.membresia_id ? 'Sí' : 'No'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <h3>Registrar pago</h3>
+      <RegistrarPagoForm socioId={id} />
+    </div>
+  )
+}
+
 export default function EditarSocioPage() {
   const { id } = useParams()
 
@@ -112,6 +162,7 @@ export default function EditarSocioPage() {
             <>
               <EditarSocioForm id={id} />
               <MembresiaSection id={id} />
+              <PagosSection id={id} />
             </>
           ) : (
             <p>No tenés permiso para editar socios.</p>
