@@ -193,3 +193,62 @@ def test_registrar_pago_rechazado_sin_rol_admin(client, crear_usuario, login):
     )
 
     assert res.status_code == 403
+
+
+def test_listar_pagos_ordenados_por_fecha_descendente(client, crear_usuario, login):
+    _login_admin(client, crear_usuario, login)
+    socio = _crear_socio(client)
+
+    client.post(
+        f"/socios/{socio['id']}/pagos",
+        json={"monto": 1000, "metodo": "efectivo", "fecha": "2026-01-01"},
+    )
+    client.post(
+        f"/socios/{socio['id']}/pagos",
+        json={"monto": 2000, "metodo": "efectivo", "fecha": "2026-03-01"},
+    )
+    client.post(
+        f"/socios/{socio['id']}/pagos",
+        json={"monto": 3000, "metodo": "efectivo", "fecha": "2026-02-01"},
+    )
+
+    res = client.get(f"/socios/{socio['id']}/pagos")
+
+    assert res.status_code == 200
+    fechas = [p["fecha"] for p in res.json()]
+    assert fechas == ["2026-03-01", "2026-02-01", "2026-01-01"]
+
+
+def test_listar_pagos_socio_sin_pagos_devuelve_lista_vacia(client, crear_usuario, login):
+    _login_admin(client, crear_usuario, login)
+    socio = _crear_socio(client)
+
+    res = client.get(f"/socios/{socio['id']}/pagos")
+
+    assert res.status_code == 200
+    assert res.json() == []
+
+
+def test_listar_pagos_socio_inexistente(client, crear_usuario, login):
+    _login_admin(client, crear_usuario, login)
+
+    res = client.get("/socios/9999/pagos")
+
+    assert res.status_code == 404
+
+
+def test_listar_pagos_rechazado_sin_rol_admin(client, crear_usuario, login):
+    admin, admin_password = crear_usuario(
+        email="admin3@test.com", password="Password123!", rol="admin"
+    )
+    login(admin.email, admin_password)
+    socio = _crear_socio(client)
+
+    otro, otro_password = crear_usuario(
+        email="socio2@test.com", password="Password123!", rol="socio"
+    )
+    login(otro.email, otro_password)
+
+    res = client.get(f"/socios/{socio['id']}/pagos")
+
+    assert res.status_code == 403

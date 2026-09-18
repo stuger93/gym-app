@@ -479,3 +479,21 @@ def registrar_pago(
     db.commit()
     db.refresh(pago)
     return pago
+
+
+@app.get("/socios/{id}/pagos", response_model=list[PagoOut])
+def listar_pagos(
+    id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    socio = db.get(Socio, id)
+    if socio is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
+
+    return (
+        db.query(Pago)
+        .filter(Pago.socio_id == id)
+        .order_by(Pago.fecha.desc())
+        .all()
+    )
