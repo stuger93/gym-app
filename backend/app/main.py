@@ -12,12 +12,14 @@ from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, get_current_user, require_rol, verify_password
 from app.database import get_db
-from app.models import Membresia, Plan, Socio, Usuario
+from app.models import Membresia, Pago, Plan, Socio, Usuario
 from app.schemas import (
     LoginRequest,
     MembresiaCreate,
     MembresiaOut,
     MiMembresiaOut,
+    PagoCreate,
+    PagoOut,
     PlanCreate,
     PlanOut,
     PlanUpdate,
@@ -413,3 +415,36 @@ def listar_membresias(
         .order_by(Membresia.fecha_inicio.desc())
         .all()
     )
+
+
+@app.post(
+    "/socios/{id}/pagos",
+    response_model=PagoOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def registrar_pago(
+    id: int,
+    datos: PagoCreate,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(require_rol("admin")),
+):
+    socio = db.get(Socio, id)
+    if socio is None or not socio.activo:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Socio no encontrado")
+
+    if datos.membresia_id is not None:
+        membresia = db.get(Membresia, datos.membresia_id)
+        if membresia is None or membresia.socio_id != id:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Membresía no encontrada")
+
+    pago = Pago(
+        socio_id=id,
+        membresia_id=datos.membresia_id,
+        monto=datos.monto,
+        metodo=datos.metodo,
+        fecha=datos.fecha or date.today(),
+    )
+    db.add(pago)
+    db.commit()
+    db.refresh(pago)
+    return pago

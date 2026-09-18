@@ -46,6 +46,17 @@ class Membresia(Base):
         return self.fecha_vencimiento < date.today()
 
 
+class Pago(Base):
+    __tablename__ = "pagos"
+
+    id = Column(Integer, primary_key=True)
+    socio_id = Column(Integer, ForeignKey("socios.id"), nullable=False)
+    membresia_id = Column(Integer, ForeignKey("membresias.id"), nullable=True)
+    monto = Column(Numeric(10, 2), nullable=False)
+    fecha = Column(Date, nullable=False)
+    metodo = Column(String, nullable=False)
+
+
 class Usuario(Base):
     __tablename__ = "usuarios"
 

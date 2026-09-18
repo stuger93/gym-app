@@ -106,6 +106,25 @@ class SocioVencidoOut(BaseModel):
     fecha_vencimiento: date
 
 
+class PagoCreate(BaseModel):
+    monto: Decimal
+    metodo: str
+    fecha: date | None = None
+    membresia_id: int | None = None
+
+
+class PagoOut(BaseModel):
+    id: int
+    socio_id: int
+    membresia_id: int | None
+    monto: Decimal
+    fecha: date
+    metodo: str
+
+    class Config:
+        from_attributes = True
+
+
 class MiMembresiaOut(BaseModel):
     tiene_socio_vinculado: bool
     tiene_membresia_activa: bool
